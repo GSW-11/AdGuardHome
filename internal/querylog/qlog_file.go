@@ -1,6 +1,7 @@
 package querylog
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -10,12 +11,12 @@ import (
 	"github.com/AdguardTeam/golibs/log"
 )
 
-// ErrSeekNotFound is returned from Seek if when it fails to find the requested
-// record.
-const ErrSeekNotFound agherr.Error = "seek: record not found"
-
-// ErrEndOfLog is returned from Seek when the end of the current log is reached.
-const ErrEndOfLog agherr.Error = "seek: end of log"
+// Timestamp not found errors.
+const (
+	ErrTSNotFound agherr.Error = "ts not found"
+	ErrTSTooLate  agherr.Error = "ts too late"
+	ErrTSTooEarly agherr.Error = "ts too early"
+)
 
 // TODO: Find a way to grow buffer instead of relying on this value when reading strings
 const maxEntrySize = 16 * 1024
@@ -68,7 +69,7 @@ func NewQLogFile(path string) (*QLogFile, error) {
 // * It returns the position of the the line with the timestamp we were looking for
 // so that when we call "ReadNext" this line was returned.
 // * Depth of the search (how many times we compared timestamps).
-// * If we could not find it, it returns ErrSeekNotFound
+// * If we could not find it, it returns one of the errors described above.
 func (q *QLogFile) Seek(timestamp int64) (int64, int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -103,13 +104,17 @@ func (q *QLogFile) Seek(timestamp int64) (int64, int, error) {
 			return 0, depth, err
 		}
 
-		if lineIdx < start || lineEndIdx > end || lineIdx == lastProbeLineIdx {
+		if lineIdx == lastProbeLineIdx {
+			if lineIdx == 0 {
+				return 0, depth, ErrTSTooEarly
+			}
+
 			// If we're testing the same line twice then most likely
-			// the scope is too narrow and we won't find anything anymore
-			log.Error("querylog: didn't find timestamp:%v", timestamp)
-			return 0, depth, ErrSeekNotFound
-		} else if lineIdx == end && lineEndIdx == end {
-			return 0, depth, ErrEndOfLog
+			// the scope is too narrow and we won't find anything
+			// anymore in any other file.
+			return 0, depth, fmt.Errorf("looking up timestamp %d in %q: %w", timestamp, q.file.Name(), ErrTSNotFound)
+		} else if lineIdx == fileInfo.Size() {
+			return 0, depth, ErrTSTooLate
 		}
 
 		// Save the last found idx
@@ -117,9 +122,8 @@ func (q *QLogFile) Seek(timestamp int64) (int64, int, error) {
 
 		// Get the timestamp from the query log record
 		ts := readQLogTimestamp(line)
-
 		if ts == 0 {
-			return 0, depth, ErrSeekNotFound
+			return 0, depth, fmt.Errorf("looking up timestamp %d in %q: record %q has empty timestamp", timestamp, q.file.Name(), line)
 		}
 
 		if ts == timestamp {
@@ -141,8 +145,7 @@ func (q *QLogFile) Seek(timestamp int64) (int64, int, error) {
 
 		depth++
 		if depth >= 100 {
-			log.Error("Seek depth is too high, aborting. File %s, ts %v", q.file.Name(), timestamp)
-			return 0, depth, ErrSeekNotFound
+			return 0, depth, fmt.Errorf("looking up timestamp %d in %q: depth %d too high: %w", timestamp, q.file.Name(), depth, ErrTSNotFound)
 		}
 	}
 
