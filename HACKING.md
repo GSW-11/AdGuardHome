@@ -27,6 +27,9 @@ find out about how we **want** our code to look like.
 
  *  <https://go-proverbs.github.io/>
 
+ *  Add an empty line before `break`, `continue`, and `return`, unless it's the
+    only statement in that block.
+
  *  Avoid `init` and use explicit initialization functions instead.
 
  *  Avoid `new`, especially with structs.

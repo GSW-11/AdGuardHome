@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"github.com/AdguardTeam/AdGuardHome/internal/aghio"
 )
 
 const versionCheckPeriod = 8 * 60 * 60
@@ -19,6 +21,9 @@ type VersionInfo struct {
 	CanAutoUpdate        bool   // If true - we can auto-update
 }
 
+// MaxResponseSize is responses on server's requests maximum length in bytes.
+const MaxResponseSize = 64 * 1024
+
 // GetVersionResponse - downloads version.json (if needed) and deserializes it
 func (u *Updater) GetVersionResponse(forceRecheck bool) (VersionInfo, error) {
 	if !forceRecheck &&
@@ -26,15 +31,23 @@ func (u *Updater) GetVersionResponse(forceRecheck bool) (VersionInfo, error) {
 		return u.parseVersionResponse(u.versionJSON)
 	}
 
+	// According to godoc: When err is nil, resp always contains a non-nil
+	// resp.Body. Caller should close resp.Body when done reading from it.
+	//
+	// The http Client and Transport guarantee that Body is always non-nil,
+	// even on responses without a body or responses with a zero-length
+	// body. It is the caller's responsibility to close Body. The default
+	// HTTP client's Transport may not reuse HTTP/1.x "keep-alive" TCP
+	// connections if the Body is not read to completion and closed.
 	resp, err := u.Client.Get(u.VersionURL)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-
 	if err != nil {
 		return VersionInfo{}, fmt.Errorf("updater: HTTP GET %s: %w", u.VersionURL, err)
 	}
+	resp.Body = aghio.LimitReadCloser(resp.Body, MaxResponseSize)
+	defer resp.Body.Close()
 
+	// This use of ReadAll is safe, cause we just limited the appropriate
+	// ReadCloser.
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return VersionInfo{}, fmt.Errorf("updater: HTTP GET %s: %w", u.VersionURL, err)
