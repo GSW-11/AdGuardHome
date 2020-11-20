@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMiddlewares_LimitRequestBody(t *testing.T) {
+func TestLimitRequestBody(t *testing.T) {
 	errReqLimitReached := &aghio.LimitReachedError{
 		Limit: RequestBodySizeLimit,
 	}
