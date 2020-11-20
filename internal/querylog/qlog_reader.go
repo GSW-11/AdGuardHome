@@ -2,6 +2,7 @@ package querylog
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/agherr"
@@ -49,22 +50,32 @@ func NewQLogReader(files []string) (*QLogReader, error) {
 //
 // Returns nil if the record is successfully found.
 // Returns an error if for some reason we could not find a record with the specified timestamp.
-func (r *QLogReader) Seek(timestamp int64) error {
+func (r *QLogReader) Seek(timestamp int64) (err error) {
 	for i := len(r.qFiles) - 1; i >= 0; i-- {
 		q := r.qFiles[i]
-		_, _, err := q.Seek(timestamp)
-		if err == nil || errors.Is(err, ErrEndOfLog) {
-			// Our search is finished, and we either found the
-			// element we were looking for or reached the end of the
-			// log.  Update currentFile only, position is already
-			// set properly in QLogFile.
+		_, _, err = q.Seek(timestamp)
+		if err == nil {
+			// Search is finished, and the searched element have
+			// been found. Update currentFile only, position is
+			// already set properly in QLogFile.
 			r.currentFile = i
 
-			return err
+			return nil
+		} else if errors.Is(err, ErrTSTooEarly) {
+			// Look at the next file, since we've reached the end of
+			// this one.
+			continue
+		} else if errors.Is(err, ErrTSTooLate) {
+			// Just seek to the start then.  timestamp is probably
+			// between the end of the previous one and the start of
+			// this one.
+			return r.SeekStart()
+		} else if errors.Is(err, ErrTSNotFound) {
+			break
 		}
 	}
 
-	return ErrSeekNotFound
+	return fmt.Errorf("querylog: %w", err)
 }
 
 // SeekStart changes the current position to the end of the newest file
