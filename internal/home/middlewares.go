@@ -24,7 +24,8 @@ func withMiddlewares(h http.Handler, middlewares ...middleware) (wrapped http.Ha
 // RequestBodySizeLimit is maximum request body length in bytes.
 const RequestBodySizeLimit = 64 * 1024
 
-// LimitRequestBody substitutes body of the request with LimitedReadCloser.
+// LimitRequestBody wraps underlying handler h, making it's request's body Read
+// method limited.
 func limitRequestBody(h http.Handler) (limited http.Handler) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Body = aghio.LimitReadCloser(r.Body, RequestBodySizeLimit)

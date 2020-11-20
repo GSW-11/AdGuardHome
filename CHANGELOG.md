@@ -31,6 +31,10 @@ and this project adheres to
 ### Changed
 
 - Improved tests output ([#2273]).
+- Various internal improvements ([#2271], [#2297]).
+
+[#2271]: https://github.com/AdguardTeam/AdGuardHome/issues/2271
+[#2297]: https://github.com/AdguardTeam/AdGuardHome/issues/2297
 
 ### Fixed
 

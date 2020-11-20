@@ -9,17 +9,17 @@ import (
 
 // LimitReachedError records the limit and the operation that caused it.
 type LimitReachedError struct {
-	Op    string
 	Limit int64
 }
 
+// Error implements error interface for LimitReachedError.
+// TODO(a.garipov): Think about error string format.
 func (lre *LimitReachedError) Error() string {
 	b := &strings.Builder{}
 
-	b.WriteString(lre.Op)
-	b.WriteString(": limit reached with ")
+	b.WriteString("attempted to read more than ")
 	b.WriteString(strconv.FormatInt(lre.Limit, 10))
-	b.WriteString(" bytes read")
+	b.WriteString(" bytes")
 
 	return b.String()
 }
@@ -36,7 +36,6 @@ type limitedReadCloser struct {
 func (lrc *limitedReadCloser) Read(p []byte) (n int, err error) {
 	if lrc.n <= 0 {
 		return 0, &LimitReachedError{
-			Op:    "Read",
 			Limit: lrc.limit,
 		}
 	}

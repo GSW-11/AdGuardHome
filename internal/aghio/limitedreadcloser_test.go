@@ -34,7 +34,6 @@ func TestLimitedReadCloser_Read(t *testing.T) {
 		rStr:  "abc",
 		want:  0,
 		err: &LimitReachedError{
-			Op:    "Read",
 			Limit: 0,
 		},
 	}, {
@@ -66,9 +65,8 @@ func TestLimitedReadCloser_LimitReachedError(t *testing.T) {
 		err  error
 	}{{
 		name: "simplest",
-		want: "test: limit reached with 0 bytes read",
+		want: "attempted to read more than 0 bytes",
 		err: &LimitReachedError{
-			Op:    "test",
 			Limit: 0,
 		},
 	}}
