@@ -1,7 +1,6 @@
 package aghio
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -34,7 +33,10 @@ func TestLimitedReadCloser_Read(t *testing.T) {
 		limit: 0,
 		rStr:  "abc",
 		want:  0,
-		err:   ErrLimitReached,
+		err: &LimitReachedError{
+			Op:    "Read",
+			Limit: 0,
+		},
 	}, {
 		name:  "truncated",
 		limit: 2,
@@ -52,7 +54,28 @@ func TestLimitedReadCloser_Read(t *testing.T) {
 			n, err := lreader.Read(buf)
 
 			assert.Equal(t, n, tc.want)
-			assert.True(t, errors.Is(err, tc.err), buf)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
+
+func TestLimitedReadCloser_LimitReachedError(t *testing.T) {
+	testCases := []struct {
+		name string
+		want string
+		err  error
+	}{{
+		name: "simplest",
+		want: "test: limit reached with 0 bytes read",
+		err: &LimitReachedError{
+			Op:    "test",
+			Limit: 0,
+		},
+	}}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.err.Error())
 		})
 	}
 }

@@ -2,54 +2,63 @@
 package aghio
 
 import (
-	"fmt"
 	"io"
-	"io/ioutil"
-
-	"github.com/AdguardTeam/AdGuardHome/internal/agherr"
+	"strconv"
+	"strings"
 )
 
-// ErrLimitReached is returned if the limit of LimitedReader is reached.
-const ErrLimitReached agherr.Error = "limit reached"
+// LimitReachedError records the limit and the operation that caused it.
+type LimitReachedError struct {
+	Op    string
+	Limit int64
+}
+
+func (lre *LimitReachedError) Error() string {
+	b := &strings.Builder{}
+
+	b.WriteString(lre.Op)
+	b.WriteString(": limit reached with ")
+	b.WriteString(strconv.FormatInt(lre.Limit, 10))
+	b.WriteString(" bytes read")
+
+	return b.String()
+}
 
 // limitedReadCloser is a wrapper for io.ReadCloser with limited reader and
 // dealing with agherr package.
 type limitedReadCloser struct {
 	limit int64
-	N     int64
-	io.ReadCloser
+	n     int64
+	rc    io.ReadCloser
 }
 
 // Read implements Reader interface.
 func (lrc *limitedReadCloser) Read(p []byte) (n int, err error) {
-	if lrc.N <= 0 {
-		return 0, fmt.Errorf("read %d bytes: %w", lrc.limit, ErrLimitReached)
+	if lrc.n <= 0 {
+		return 0, &LimitReachedError{
+			Op:    "Read",
+			Limit: lrc.limit,
+		}
 	}
-	if int64(len(p)) > lrc.N {
-		p = p[0:lrc.N]
+	if int64(len(p)) > lrc.n {
+		p = p[0:lrc.n]
 	}
-	n, err = lrc.ReadCloser.Read(p)
-	lrc.N -= int64(n)
+	n, err = lrc.rc.Read(p)
+	lrc.n -= int64(n)
 	return n, err
 }
 
 // Close implements Closer interface.
 func (lrc *limitedReadCloser) Close() error {
-	return lrc.ReadCloser.Close()
+	return lrc.rc.Close()
 }
 
 // LimitReadCloser wraps ReadCloser to make it's Reader stop with
 // ErrLimitReached after n bytes read.
 func LimitReadCloser(rc io.ReadCloser, n int64) io.ReadCloser {
 	return &limitedReadCloser{
-		limit:      n,
-		N:          n,
-		ReadCloser: rc,
+		limit: n,
+		n:     n,
+		rc:    rc,
 	}
-}
-
-// LimitReader wraps Reader to make it stop with ErrLimitReached after
-// n bytes read.
-func LimitReader(r io.Reader, n int64) io.Reader {
-	return LimitReadCloser(ioutil.NopCloser(r), n)
 }

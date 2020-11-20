@@ -233,7 +233,7 @@ func (u *Updater) downloadPackageFile(url string, filename string) error {
 	defer resp.Body.Close()
 
 	log.Debug("updater: reading HTTP body")
-	// This use of ReadAll is now safe, cause we limited body's Reader.
+	// This use of ReadAll is now safe, because we limited body's Reader.
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("ioutil.ReadAll() failed: %w", err)

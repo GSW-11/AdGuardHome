@@ -138,7 +138,7 @@ func (w *Whois) query(target, serverAddr string) (string, error) {
 		return "", err
 	}
 
-	// This use of ReadAll is now safe, cause we limited the conn Reader.
+	// This use of ReadAll is now safe, because we limited the conn Reader.
 	data, err := ioutil.ReadAll(connReadCloser)
 	if err != nil {
 		return "", err

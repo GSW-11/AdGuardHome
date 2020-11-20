@@ -83,11 +83,13 @@ func glGetTokenDate(file string) uint32 {
 		log.Error("os.Open: %s", err)
 		return 0
 	}
+	fileReadCloser := aghio.LimitReadCloser(f, MaxFileSize)
+	defer fileReadCloser.Close()
+
 	var dateToken uint32
 
-	fileReader := aghio.LimitReader(f, MaxFileSize)
-	// This use of ReadAll is now safe, cause we limited reader.
-	bs, err := ioutil.ReadAll(fileReader)
+	// This use of ReadAll is now safe, because we limited reader.
+	bs, err := ioutil.ReadAll(fileReadCloser)
 	if err != nil {
 		log.Error("ioutil.ReadAll: %s", err)
 		return 0

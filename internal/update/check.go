@@ -46,7 +46,7 @@ func (u *Updater) GetVersionResponse(forceRecheck bool) (VersionInfo, error) {
 	resp.Body = aghio.LimitReadCloser(resp.Body, MaxResponseSize)
 	defer resp.Body.Close()
 
-	// This use of ReadAll is safe, cause we just limited the appropriate
+	// This use of ReadAll is safe, because we just limited the appropriate
 	// ReadCloser.
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
