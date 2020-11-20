@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AdguardTeam/AdGuardHome/internal/aghio"
 	"github.com/AdguardTeam/AdGuardHome/internal/util"
 
 	"github.com/AdguardTeam/golibs/cache"
@@ -115,6 +116,9 @@ func whoisParse(data string) map[string]string {
 	return m
 }
 
+// MaxConnReadSize is an upper limit in bytes for reading from net.Conn.
+const MaxConnReadSize = 64 * 1024
+
 // Send request to a server and receive the response
 func (w *Whois) query(target, serverAddr string) (string, error) {
 	addr, _, _ := net.SplitHostPort(serverAddr)
@@ -125,7 +129,8 @@ func (w *Whois) query(target, serverAddr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer conn.Close()
+	connReadCloser := aghio.LimitReadCloser(conn, MaxConnReadSize)
+	defer connReadCloser.Close()
 
 	_ = conn.SetReadDeadline(time.Now().Add(time.Duration(w.timeoutMsec) * time.Millisecond))
 	_, err = conn.Write([]byte(target + "\r\n"))
@@ -133,7 +138,8 @@ func (w *Whois) query(target, serverAddr string) (string, error) {
 		return "", err
 	}
 
-	data, err := ioutil.ReadAll(conn)
+	// This use of ReadAll is now safe, cause we limited the conn Reader.
+	data, err := ioutil.ReadAll(connReadCloser)
 	if err != nil {
 		return "", err
 	}

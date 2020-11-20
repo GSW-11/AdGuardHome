@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AdguardTeam/AdGuardHome/internal/aghio"
 	"github.com/AdguardTeam/AdGuardHome/internal/util"
 	"github.com/AdguardTeam/golibs/log"
 )
@@ -217,17 +218,22 @@ func (u *Updater) clean() {
 	_ = os.RemoveAll(u.updateDir)
 }
 
+// MaxPackageFileSize is a maximum package file length in bytes.
+const MaxPackageFileSize = 5 * 1024 * 1024
+
 // Download package file and save it to disk
 func (u *Updater) downloadPackageFile(url string, filename string) error {
 	resp, err := u.Client.Get(url)
 	if err != nil {
 		return fmt.Errorf("http request failed: %w", err)
 	}
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
+	// According to go doc: When err is nil, resp always contains a non-nil
+	// resp.Body. Caller should close resp.Body when done reading from it.
+	resp.Body = aghio.LimitReadCloser(resp.Body, MaxPackageFileSize)
+	defer resp.Body.Close()
 
 	log.Debug("updater: reading HTTP body")
+	// This use of ReadAll is now safe, cause we limited body's Reader.
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("ioutil.ReadAll() failed: %w", err)

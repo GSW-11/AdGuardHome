@@ -4,6 +4,7 @@ package aghio
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/agherr"
 )
@@ -37,12 +38,18 @@ func (lrc *limitedReadCloser) Close() error {
 	return lrc.ReadCloser.Close()
 }
 
-// LimitReadCloser returns a ReadCloser with original Closer and Reader that
-// stops with ErrLimitReached after n bytes read.
+// LimitReadCloser wraps ReadCloser to make it's Reader stop with
+// ErrLimitReached after n bytes read.
 func LimitReadCloser(rc io.ReadCloser, n int64) io.ReadCloser {
 	return &limitedReadCloser{
 		limit:      n,
 		N:          n,
 		ReadCloser: rc,
 	}
+}
+
+// LimitReader wraps Reader to make it stop with ErrLimitReached after
+// n bytes read.
+func LimitReader(r io.Reader, n int64) io.Reader {
+	return LimitReadCloser(ioutil.NopCloser(r), n)
 }
