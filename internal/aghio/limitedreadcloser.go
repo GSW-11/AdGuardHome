@@ -2,9 +2,8 @@
 package aghio
 
 import (
+	"fmt"
 	"io"
-	"strconv"
-	"strings"
 )
 
 // LimitReachedError records the limit and the operation that caused it.
@@ -15,13 +14,7 @@ type LimitReachedError struct {
 // Error implements error interface for LimitReachedError.
 // TODO(a.garipov): Think about error string format.
 func (lre *LimitReachedError) Error() string {
-	b := &strings.Builder{}
-
-	b.WriteString("attempted to read more than ")
-	b.WriteString(strconv.FormatInt(lre.Limit, 10))
-	b.WriteString(" bytes")
-
-	return b.String()
+	return fmt.Sprintf("attempted to read more than %d bytes", lre.Limit)
 }
 
 // limitedReadCloser is a wrapper for io.ReadCloser with limited reader and

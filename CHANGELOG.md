@@ -9,7 +9,18 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
 
+- Limiting request's body size ([#2305]).
+
+[#2305]: https://github.com/AdguardTeam/AdGuardHome/issues/2305
+
+### Changed
+
+- Various internal improvements ([#2271], [#2297]).
+
+[#2271]: https://github.com/AdguardTeam/AdGuardHome/issues/2271
+[#2297]: https://github.com/AdguardTeam/AdGuardHome/issues/2297
 
 ## [v0.104.3] - 2020-11-19
 
@@ -31,10 +42,6 @@ and this project adheres to
 ### Changed
 
 - Improved tests output ([#2273]).
-- Various internal improvements ([#2271], [#2297]).
-
-[#2271]: https://github.com/AdguardTeam/AdGuardHome/issues/2271
-[#2297]: https://github.com/AdguardTeam/AdGuardHome/issues/2297
 
 ### Fixed
 
