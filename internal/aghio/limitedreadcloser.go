@@ -48,6 +48,9 @@ func (lrc *limitedReadCloser) Close() error {
 // LimitReadCloser wraps ReadCloser to make it's Reader stop with
 // ErrLimitReached after n bytes read.
 func LimitReadCloser(rc io.ReadCloser, n int64) io.ReadCloser {
+	if n < 0 {
+		n = 0
+	}
 	return &limitedReadCloser{
 		limit: n,
 		n:     n,

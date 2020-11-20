@@ -11,7 +11,7 @@ and this project adheres to
 
 ### Added
 
-- Limiting request's body size ([#2305]).
+- HTTP API request body limit [#2305].
 
 [#2305]: https://github.com/AdguardTeam/AdGuardHome/issues/2305
 
@@ -21,6 +21,8 @@ and this project adheres to
 
 [#2271]: https://github.com/AdguardTeam/AdGuardHome/issues/2271
 [#2297]: https://github.com/AdguardTeam/AdGuardHome/issues/2297
+
+
 
 ## [v0.104.3] - 2020-11-19
 

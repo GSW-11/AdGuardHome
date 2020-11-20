@@ -219,7 +219,7 @@ func (u *Updater) clean() {
 }
 
 // MaxPackageFileSize is a maximum package file length in bytes.
-const MaxPackageFileSize = 5 * 1024 * 1024
+const MaxPackageFileSize = 32 * 1024 * 1024
 
 // Download package file and save it to disk
 func (u *Updater) downloadPackageFile(url string, filename string) error {
@@ -227,8 +227,7 @@ func (u *Updater) downloadPackageFile(url string, filename string) error {
 	if err != nil {
 		return fmt.Errorf("http request failed: %w", err)
 	}
-	// According to go doc: When err is nil, resp always contains a non-nil
-	// resp.Body. Caller should close resp.Body when done reading from it.
+
 	resp.Body = aghio.LimitReadCloser(resp.Body, MaxPackageFileSize)
 	defer resp.Body.Close()
 
